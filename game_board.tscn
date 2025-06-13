@@ -1,0 +1,20 @@
+[gd_scene load_steps=3 format=3 uid="uid://diw1e7k0vw0iq"]
+
+[ext_resource type="Script" uid="uid://bims7l8u2tm3v" path="res://game_board.gd" id="1_xrvgy"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_17g6i"]
+bg_color = Color(0.277528, 0.277528, 0.277528, 1)
+corner_radius_top_left = 15
+corner_radius_top_right = 15
+corner_radius_bottom_right = 15
+corner_radius_bottom_left = 15
+
+[node name="Node2D" type="Node2D"]
+script = ExtResource("1_xrvgy")
+
+[node name="Panel" type="Panel" parent="."]
+offset_left = 20.0
+offset_top = 400.0
+offset_right = 700.0
+offset_bottom = 1080.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_17g6i")
