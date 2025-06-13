@@ -4,6 +4,7 @@ enum DIR {NONE, LEFT, RIGHT, UP, DOWN}
 enum MODE {STANDARD, EASY, HARD}
 
 var tile_grid = Array()
+var prev_tile_grid = Array()
 
 var swipe_start = null
 var swipe_end = null
@@ -15,16 +16,86 @@ var game_mode = MODE.STANDARD
 signal game_over
 
 func _ready() -> void:
-	tile_grid.resize(4)
+	$reset.pressed.connect(Callable(self, "_on_reset_pressed"))
+	$go_back.pressed.connect(Callable(self, "_on_go_back_pressed"))
+	_setup_grids()
+
+func _on_reset_pressed() -> void:
+	_clear_grid(tile_grid)
+	_clear_grid(prev_tile_grid)
+	_add_new_tile()
+	_draw_tile_grid()
+
+func _on_go_back_pressed() -> void:
+	print("BEFORE")
+	print("prev_tile_grid:")
+	print(prev_tile_grid)
+	print("tile_grid:")
+	print(tile_grid)
+	_copy_grid(prev_tile_grid, tile_grid)
+	_clear_grid(prev_tile_grid)
+	_unhide_grid(tile_grid)
+	_draw_tile_grid()
+	print("AFTER")
+	print("prev_tile_grid:")
+	print(prev_tile_grid)
+	print("tile_grid:")
+	print(tile_grid)
+
+func _copy_grid(source_grid: Array, dest_grid: Array) -> void:
+	_clear_grid(dest_grid)
 	for i in range(4):
-		tile_grid[i] = Array()
-		tile_grid[i].resize(4)
 		for j in range(4):
-			tile_grid[i][j] = false
-	_spawn_new_tile()
+			if source_grid[i][j]:
+				dest_grid[i][j] = _copy_tile(source_grid[i][j])
+
+func _clear_grid(grid: Array) -> void:
+	for i in range(4):
+		for j in range(4):
+			if grid[i][j]:
+				_drop_from_grid(grid, i, j)
+
+func _hide_grid(grid: Array) -> void:
+	for i in range(4):
+		for j in range(4):
+			if grid[i][j]:
+				grid[i][j].hide()
+
+func _unhide_grid(grid: Array) -> void:
+	for i in range(4):
+		for j in range(4):
+			if grid[i][j]:
+				grid[i][j].show()
+
+func _drop_from_grid(grid:Array, i: int, j: int) -> void:
+	remove_child(grid[i][j])
+	grid[i][j] = false	
+
+func _copy_tile(tile: Node2D) -> Node2D:
+	var scene = preload("res://tile.tscn") as PackedScene
+	var instance = scene.instantiate()
+	instance._set_log_val(tile._get_log_val())
+	add_child(instance)
+	return instance
+
+func _setup_grids() -> void:
+	tile_grid = _new_grid()
+	prev_tile_grid = _new_grid()
+	_add_new_tile()
+	_draw_tile_grid()
+
+func _new_grid() -> Array:
+	var new_grid = Array()
+	new_grid.resize(4)
+	for i in range(4):
+		new_grid[i] = Array()
+		new_grid[i].resize(4)
+		for j in range(4):
+			new_grid[i][j] = false
+	return new_grid
 
 # Returns false if new tile cannot be spawned
-func _spawn_new_tile() -> bool:
+func _add_new_tile() -> bool:
 	var empties = _get_empties()
 	if empties.is_empty():
 		emit_signal("game_over")
@@ -36,7 +107,6 @@ func _spawn_new_tile() -> bool:
 			var scene = preload("res://tile.tscn") as PackedScene
 			tile_grid[coords[0]][coords[1]] = scene.instantiate()
 			add_child(tile_grid[coords[0]][coords[1]])
-			_draw_tile_grid()
 			return true
 		_:
 			return false
@@ -70,6 +140,10 @@ func _handle_swipe(swipe_dir) -> void:
 	if swipe_dir == DIR.NONE and swiping:
 		swipe_dir = _get_dir()
 	
+	if _will_move(swipe_dir):
+		_copy_grid(tile_grid, prev_tile_grid)
+		_hide_grid(prev_tile_grid)
+
 	var moved = false
 	match swipe_dir:
 		DIR.NONE:
@@ -84,7 +158,30 @@ func _handle_swipe(swipe_dir) -> void:
 			moved = _swipe_down()
 	
 	if moved:
-		_spawn_new_tile()
+		_add_new_tile()
+		_draw_tile_grid()
+
+# Returns true if the grid will update after a swipe
+func _will_move(swipe_dir: DIR) -> bool:
+	var tmp = _new_grid()
+	_copy_grid(tile_grid, tmp)
+	
+	var moved = false
+	match swipe_dir:
+		DIR.NONE:
+			return false
+		DIR.LEFT:
+			moved = _swipe_left()
+		DIR.RIGHT:
+			moved = _swipe_right()
+		DIR.UP:
+			moved = _swipe_up()
+		DIR.DOWN:
+			moved = _swipe_down()
+	
+	_copy_grid(tmp, tile_grid)
+	_clear_grid(tmp)
+	return moved
 
 func _get_dir() -> DIR:
 	var x_diff = swipe_end.x - swipe_start.x
@@ -113,8 +210,7 @@ func _swipe_left() -> bool:
 					if tile_grid[i][k]:
 						if tile_grid[i][k]._get_log_val() == tile_grid[i][j]._get_log_val():
 							tile_grid[i][j]._inc_log_val()
-							tile_grid[i][k].free()
-							tile_grid[i][k] = false
+							_drop_from_grid(tile_grid, i, k)
 							moved = true
 						break
 	for i in range(4):
@@ -138,8 +234,7 @@ func _swipe_right() -> bool:
 					if tile_grid[i][3 - k]:
 						if tile_grid[i][3 - k]._get_log_val() == tile_grid[i][3 - j]._get_log_val():
 							tile_grid[i][3 - j]._inc_log_val()
-							tile_grid[i][3 - k].free()
-							tile_grid[i][3 - k] = false
+							_drop_from_grid(tile_grid, i, 3-k)
 							moved = true
 						break
 	for i in range(4):
@@ -163,8 +258,7 @@ func _swipe_up() -> bool:
 					if tile_grid[k][j]:
 						if tile_grid[k][j]._get_log_val() == tile_grid[i][j]._get_log_val():
 							tile_grid[i][j]._inc_log_val()
-							tile_grid[k][j].free()
-							tile_grid[k][j] = false
+							_drop_from_grid(tile_grid, k, j)
 							moved = true
 						break
 	for j in range(4):
@@ -188,8 +282,7 @@ func _swipe_down() -> bool:
 					if tile_grid[3 - k][j]:
 						if tile_grid[3 - k][j]._get_log_val() == tile_grid[3 - i][j]._get_log_val():
 							tile_grid[3 - i][j]._inc_log_val()
-							tile_grid[3 - k][j].free()
-							tile_grid[3 - k][j] = false
+							_drop_from_grid(tile_grid, 3-k, j)
 							moved = true
 						break
 	for j in range(4):
@@ -204,6 +297,7 @@ func _swipe_down() -> bool:
 	
 	return moved
 
+# Deprecated
 func _closest_in_dir(i: int, j: int, dir: DIR) -> Array:
 	var idx = -1
 	if dir == DIR.LEFT or dir == DIR.RIGHT:

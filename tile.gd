@@ -33,3 +33,7 @@ func _set_img() -> void:
 	
 func _get_log_val() -> int:
 	return log_val
+
+func _set_log_val(new_val: int) -> void:
+	log_val = new_val
+	_set_img()

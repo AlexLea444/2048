@@ -18,3 +18,19 @@ offset_top = 400.0
 offset_right = 700.0
 offset_bottom = 1080.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_17g6i")
+
+[node name="reset" type="Button" parent="."]
+offset_left = 587.0
+offset_top = 320.0
+offset_right = 680.0
+offset_bottom = 373.0
+theme_override_font_sizes/font_size = 32
+text = "Reset"
+
+[node name="go_back" type="Button" parent="."]
+offset_left = 547.0
+offset_top = 253.0
+offset_right = 680.0
+offset_bottom = 306.0
+theme_override_font_sizes/font_size = 32
+text = "Go Back"
