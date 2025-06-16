@@ -1,23 +1,10 @@
 [gd_scene load_steps=3 format=3 uid="uid://diw1e7k0vw0iq"]
 
 [ext_resource type="Script" uid="uid://bims7l8u2tm3v" path="res://game_board.gd" id="1_xrvgy"]
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_17g6i"]
-bg_color = Color(0.277528, 0.277528, 0.277528, 1)
-corner_radius_top_left = 15
-corner_radius_top_right = 15
-corner_radius_bottom_right = 15
-corner_radius_bottom_left = 15
+[ext_resource type="PackedScene" uid="uid://bm032x6xhxjlr" path="res://board_background.tscn" id="2_i37i2"]
 
 [node name="Node2D" type="Node2D"]
 script = ExtResource("1_xrvgy")
-
-[node name="Panel" type="Panel" parent="."]
-offset_left = 20.0
-offset_top = 400.0
-offset_right = 700.0
-offset_bottom = 1080.0
-theme_override_styles/panel = SubResource("StyleBoxFlat_17g6i")
 
 [node name="reset" type="Button" parent="."]
 offset_left = 587.0
@@ -34,3 +21,25 @@ offset_right = 680.0
 offset_bottom = 306.0
 theme_override_font_sizes/font_size = 32
 text = "Go Back"
+
+[node name="board_background" parent="." instance=ExtResource("2_i37i2")]
+
+[node name="mode_select" type="OptionButton" parent="."]
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = 508.0
+offset_top = 47.0
+offset_right = 680.0
+offset_bottom = 100.0
+grow_horizontal = 0
+grow_vertical = 2
+theme_override_font_sizes/font_size = 32
+selected = 0
+item_count = 2
+popup/item_0/text = "Classic"
+popup/item_0/id = 0
+popup/item_1/text = "No Fours"
+popup/item_1/id = 1

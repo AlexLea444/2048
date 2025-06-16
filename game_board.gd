@@ -1,7 +1,7 @@
 extends Node2D
 
 enum DIR {NONE, LEFT, RIGHT, UP, DOWN}
-enum MODE {STANDARD, EASY, HARD}
+enum MODE {STANDARD, EASY, HARD, NO4}
 
 var tile_grid = Array()
 var prev_tile_grid = Array()
@@ -13,34 +13,39 @@ const MINIMUM_DRAG = 50
 
 var game_mode = MODE.STANDARD
 
+var score = 0
+var prev_score = 0
 signal game_over
+signal game_score(new_score: int)
 
 func _ready() -> void:
 	$reset.pressed.connect(Callable(self, "_on_reset_pressed"))
 	$go_back.pressed.connect(Callable(self, "_on_go_back_pressed"))
+	$mode_select.item_selected.connect(Callable(self, "_on_mode_select_pressed"))
 	_setup_grids()
 
 func _on_reset_pressed() -> void:
+	score = 0
+	prev_score = 0
+	emit_signal("game_score", score)
 	_clear_grid(tile_grid)
 	_clear_grid(prev_tile_grid)
 	_add_new_tile()
-	_draw_tile_grid()
+	#_draw_tile_grid()
 
 func _on_go_back_pressed() -> void:
-	print("BEFORE")
-	print("prev_tile_grid:")
-	print(prev_tile_grid)
-	print("tile_grid:")
-	print(tile_grid)
+	score = prev_score
+	prev_score = 0
+	emit_signal("game_score", score)
 	_copy_grid(prev_tile_grid, tile_grid)
 	_clear_grid(prev_tile_grid)
-	_unhide_grid(tile_grid)
-	_draw_tile_grid()
-	print("AFTER")
-	print("prev_tile_grid:")
-	print(prev_tile_grid)
-	print("tile_grid:")
-	print(tile_grid)
+	_childify_grid(tile_grid)
+	#_draw_tile_grid()
+
+func _on_mode_select_pressed(index: int) -> void:
+	match index:
+		0: game_mode = MODE.STANDARD
+		1: game_mode = MODE.NO4
 
 func _copy_grid(source_grid: Array, dest_grid: Array) -> void:
 	_clear_grid(dest_grid)
@@ -67,22 +72,35 @@ func _unhide_grid(grid: Array) -> void:
 			if grid[i][j]:
 				grid[i][j].show()
 
+func _childify_grid(grid: Array) -> void:
+	for i in range(4):
+		for j in range(4):
+			if grid[i][j]:
+				add_child(grid[i][j])
+				grid[i][j]._set_img()
+
 func _drop_from_grid(grid:Array, i: int, j: int) -> void:
-	remove_child(grid[i][j])
+	if not grid[i][j].get_parent():
+		grid[i][j].free()
+	else:
+		remove_child(grid[i][j])
 	grid[i][j] = false	
 
 func _copy_tile(tile: Node2D) -> Node2D:
 	var scene = preload("res://tile.tscn") as PackedScene
 	var instance = scene.instantiate()
 	instance._set_log_val(tile._get_log_val())
-	add_child(instance)
+	instance._set_pos(tile._get_row(), tile._get_col())
+	#add_child(instance)
 	return instance
 
 func _setup_grids() -> void:
+	score = 0
+	prev_score = 0
 	tile_grid = _new_grid()
 	prev_tile_grid = _new_grid()
 	_add_new_tile()
-	_draw_tile_grid()
+	#_draw_tile_grid()
 
 func _new_grid() -> Array:
 	var new_grid = Array()
@@ -106,6 +124,18 @@ func _add_new_tile() -> bool:
 			var coords = empties.pick_random()
 			var scene = preload("res://tile.tscn") as PackedScene
 			tile_grid[coords[0]][coords[1]] = scene.instantiate()
+			add_child(tile_grid[coords[0]][coords[1]])
+			tile_grid[coords[0]][coords[1]]._set_pos(coords[0], coords[1])
+			
+			# 10% chance of getting a 4
+			if randf_range(0,1) < 0.1:
+				tile_grid[coords[0]][coords[1]]._set_log_val(2)
+			return true
+		MODE.NO4:
+			var coords = empties.pick_random()
+			var scene = preload("res://tile.tscn") as PackedScene
+			tile_grid[coords[0]][coords[1]] = scene.instantiate()
+			tile_grid[coords[0]][coords[1]]._set_pos(coords[0], coords[1])
 			add_child(tile_grid[coords[0]][coords[1]])
 			return true
 		_:
@@ -134,15 +164,12 @@ func _input(event: InputEvent) -> void:
 			swiping = false
 
 func _handle_swipe(swipe_dir) -> void:
-	if _get_empties().is_empty():
-		emit_signal("game_over")
-	
 	if swipe_dir == DIR.NONE and swiping:
 		swipe_dir = _get_dir()
 	
-	if _will_move(swipe_dir):
-		_copy_grid(tile_grid, prev_tile_grid)
-		_hide_grid(prev_tile_grid)
+	var tmp_prev_tile_grid = _new_grid()
+	var tmp_prev_score = score
+	_copy_grid(tile_grid, tmp_prev_tile_grid)
 
 	var moved = false
 	match swipe_dir:
@@ -159,9 +186,13 @@ func _handle_swipe(swipe_dir) -> void:
 	
 	if moved:
 		_add_new_tile()
-		_draw_tile_grid()
+		_copy_grid(tmp_prev_tile_grid, prev_tile_grid)
+		prev_score = tmp_prev_score
+		emit_signal("game_score", score)
+		#_draw_tile_grid()
+	_clear_grid(tmp_prev_tile_grid)
 
-# Returns true if the grid will update after a swipe
+# Deprecated (Wasn't working!!!)
 func _will_move(swipe_dir: DIR) -> bool:
 	var tmp = _new_grid()
 	_copy_grid(tile_grid, tmp)
@@ -201,6 +232,13 @@ func _get_dir() -> DIR:
 		else:
 			return DIR.UP
 
+func _combine_tiles(absorber, absorbee) -> void:
+	if absorber._get_log_val() != absorbee._get_log_val():
+		return
+
+	absorber._inc_log_val()
+	score += pow(2, absorber._get_log_val())
+
 func _swipe_left() -> bool:
 	var moved = false
 	for i in range(4):
@@ -209,7 +247,7 @@ func _swipe_left() -> bool:
 				for k in range(j + 1,4):
 					if tile_grid[i][k]:
 						if tile_grid[i][k]._get_log_val() == tile_grid[i][j]._get_log_val():
-							tile_grid[i][j]._inc_log_val()
+							_combine_tiles(tile_grid[i][j], tile_grid[i][k])
 							_drop_from_grid(tile_grid, i, k)
 							moved = true
 						break
@@ -219,6 +257,7 @@ func _swipe_left() -> bool:
 				for k in range(j + 1,4):
 					if tile_grid[i][k]:
 						tile_grid[i][j] = tile_grid[i][k]
+						tile_grid[i][j]._set_pos(i, j)
 						tile_grid[i][k] = false
 						moved = true
 						break
@@ -233,7 +272,7 @@ func _swipe_right() -> bool:
 				for k in range(j + 1,4):
 					if tile_grid[i][3 - k]:
 						if tile_grid[i][3 - k]._get_log_val() == tile_grid[i][3 - j]._get_log_val():
-							tile_grid[i][3 - j]._inc_log_val()
+							_combine_tiles(tile_grid[i][3 - j], tile_grid[i][3 - k])
 							_drop_from_grid(tile_grid, i, 3-k)
 							moved = true
 						break
@@ -243,6 +282,7 @@ func _swipe_right() -> bool:
 				for k in range(j + 1,4):
 					if tile_grid[i][3 - k]:
 						tile_grid[i][3 - j] = tile_grid[i][3 - k]
+						tile_grid[i][3 - j]._set_pos(i, 3 - j)
 						tile_grid[i][3 - k] = false
 						moved = true
 						break
@@ -257,7 +297,7 @@ func _swipe_up() -> bool:
 				for k in range(i + 1,4):
 					if tile_grid[k][j]:
 						if tile_grid[k][j]._get_log_val() == tile_grid[i][j]._get_log_val():
-							tile_grid[i][j]._inc_log_val()
+							_combine_tiles(tile_grid[i][j], tile_grid[k][j])
 							_drop_from_grid(tile_grid, k, j)
 							moved = true
 						break
@@ -267,6 +307,7 @@ func _swipe_up() -> bool:
 				for k in range(i + 1,4):
 					if tile_grid[k][j]:
 						tile_grid[i][j] = tile_grid[k][j]
+						tile_grid[i][j]._set_pos(i, j)
 						tile_grid[k][j] = false
 						moved = true
 						break
@@ -281,7 +322,7 @@ func _swipe_down() -> bool:
 				for k in range(i + 1,4):
 					if tile_grid[3 - k][j]:
 						if tile_grid[3 - k][j]._get_log_val() == tile_grid[3 - i][j]._get_log_val():
-							tile_grid[3 - i][j]._inc_log_val()
+							_combine_tiles(tile_grid[3 - i][j], tile_grid[3 - k][j])
 							_drop_from_grid(tile_grid, 3-k, j)
 							moved = true
 						break
@@ -291,6 +332,7 @@ func _swipe_down() -> bool:
 				for k in range(i + 1,4):
 					if tile_grid[3 - k][j]:
 						tile_grid[3 - i][j] = tile_grid[3 - k][j]
+						tile_grid[3 - i][j]._set_pos(3 - i, j)
 						tile_grid[3 - k][j] = false
 						moved = true
 						break

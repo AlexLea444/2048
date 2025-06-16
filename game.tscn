@@ -1,4 +1,4 @@
-[gd_scene load_steps=5 format=3 uid="uid://cyd33xapcou7l"]
+[gd_scene load_steps=7 format=3 uid="uid://cyd33xapcou7l"]
 
 [ext_resource type="PackedScene" uid="uid://diw1e7k0vw0iq" path="res://game_board.tscn" id="1_80nbo"]
 [ext_resource type="Script" uid="uid://dgyl33e8x8af3" path="res://game.gd" id="1_e2o6t"]
@@ -10,6 +10,10 @@ colors = PackedColorArray(1, 0.968627, 0.937255, 1)
 [sub_resource type="GradientTexture1D" id="GradientTexture1D_feb5d"]
 gradient = SubResource("Gradient_e2o6t")
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_e2o6t"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_feb5d"]
+
 [node name="Node2D" type="Node2D"]
 script = ExtResource("1_e2o6t")
 
@@ -20,12 +24,12 @@ texture = SubResource("GradientTexture1D_feb5d")
 
 [node name="game_board" parent="." instance=ExtResource("1_80nbo")]
 
-[node name="title" type="RichTextLabel" parent="."]
+[node name="game_title" type="RichTextLabel" parent="."]
 top_level = true
 clip_contents = false
 offset_left = 20.0
-offset_right = 700.0
-offset_bottom = 141.0
+offset_right = 493.0
+offset_bottom = 165.0
 theme_override_colors/default_color = Color(0, 0, 0, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_font_sizes/bold_italics_font_size = 120
@@ -37,7 +41,7 @@ text = "2048"
 fit_content = true
 scroll_active = false
 
-[node name="title2" type="RichTextLabel" parent="."]
+[node name="author" type="RichTextLabel" parent="."]
 top_level = true
 clip_contents = false
 offset_left = 20.0
@@ -52,3 +56,39 @@ theme_override_font_sizes/mono_font_size = 40
 theme_override_font_sizes/normal_font_size = 40
 theme_override_font_sizes/bold_font_size = 40
 text = "Alexander Lea"
+
+[node name="score" type="RichTextLabel" parent="."]
+top_level = true
+clip_contents = false
+offset_left = 20.0
+offset_top = 253.0
+offset_right = 531.0
+offset_bottom = 394.0
+theme_override_colors/default_color = Color(0, 0, 0, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/bold_italics_font_size = 40
+theme_override_font_sizes/italics_font_size = 40
+theme_override_font_sizes/mono_font_size = 40
+theme_override_font_sizes/normal_font_size = 40
+theme_override_font_sizes/bold_font_size = 40
+theme_override_styles/fill = SubResource("StyleBoxFlat_e2o6t")
+theme_override_styles/background = SubResource("StyleBoxFlat_feb5d")
+text = "Score: 0"
+
+[node name="high_score" type="RichTextLabel" parent="."]
+top_level = true
+clip_contents = false
+offset_left = 20.0
+offset_top = 320.0
+offset_right = 531.0
+offset_bottom = 461.0
+theme_override_colors/default_color = Color(0, 0, 0, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/bold_italics_font_size = 40
+theme_override_font_sizes/italics_font_size = 40
+theme_override_font_sizes/mono_font_size = 40
+theme_override_font_sizes/normal_font_size = 40
+theme_override_font_sizes/bold_font_size = 40
+theme_override_styles/fill = SubResource("StyleBoxFlat_e2o6t")
+theme_override_styles/background = SubResource("StyleBoxFlat_feb5d")
+text = "High Score: 0"

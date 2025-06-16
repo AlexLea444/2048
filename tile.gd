@@ -1,6 +1,8 @@
 extends Node2D
 
 var log_val = 1
+var row = -1
+var col = -1
 
 func _ready() -> void:
 	$Panel/Sprite2D.texture = preload("res://tiles/tile_1.png")
@@ -37,3 +39,14 @@ func _get_log_val() -> int:
 func _set_log_val(new_val: int) -> void:
 	log_val = new_val
 	_set_img()
+
+func _set_pos(new_row: int, new_col: int) -> void:
+	row = new_row
+	col = new_col
+	set_position(Vector2(20 + 16 * (col + 1) + 150 * col, 400 + 16 * (row + 1) + 150 * row))
+
+func _get_row() -> int:
+	return row
+
+func _get_col() -> int:
+	return col
