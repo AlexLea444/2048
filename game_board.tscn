@@ -23,23 +23,3 @@ theme_override_font_sizes/font_size = 32
 text = "Go Back"
 
 [node name="board_background" parent="." instance=ExtResource("2_i37i2")]
-
-[node name="mode_select" type="OptionButton" parent="."]
-anchors_preset = 6
-anchor_left = 1.0
-anchor_top = 0.5
-anchor_right = 1.0
-anchor_bottom = 0.5
-offset_left = 508.0
-offset_top = 47.0
-offset_right = 680.0
-offset_bottom = 100.0
-grow_horizontal = 0
-grow_vertical = 2
-theme_override_font_sizes/font_size = 32
-selected = 0
-item_count = 2
-popup/item_0/text = "Classic"
-popup/item_0/id = 0
-popup/item_1/text = "No Fours"
-popup/item_1/id = 1

@@ -1,7 +1,6 @@
 extends Node2D
 
 enum DIR {NONE, LEFT, RIGHT, UP, DOWN}
-enum MODE {STANDARD, EASY, HARD, NO4}
 
 var tile_grid = Array()
 var prev_tile_grid = Array()
@@ -11,7 +10,9 @@ var swipe_end = null
 var swiping = false
 const MINIMUM_DRAG = 50
 
-var game_mode = MODE.STANDARD
+# game logistics
+var game_mode = "STANDARD"
+var disabled = false
 
 var score = 0
 var prev_score = 0
@@ -21,7 +22,6 @@ signal game_score(new_score: int)
 func _ready() -> void:
 	$reset.pressed.connect(Callable(self, "_on_reset_pressed"))
 	$go_back.pressed.connect(Callable(self, "_on_go_back_pressed"))
-	$mode_select.item_selected.connect(Callable(self, "_on_mode_select_pressed"))
 	_setup_grids()
 
 func _on_reset_pressed() -> void:
@@ -42,10 +42,13 @@ func _on_go_back_pressed() -> void:
 	_childify_grid(tile_grid)
 	#_draw_tile_grid()
 
-func _on_mode_select_pressed(index: int) -> void:
-	match index:
-		0: game_mode = MODE.STANDARD
-		1: game_mode = MODE.NO4
+func _disable() -> void:
+	hide()
+	disabled = true
+
+func _enable() -> void:
+	show()
+	disabled = false
 
 func _copy_grid(source_grid: Array, dest_grid: Array) -> void:
 	_clear_grid(dest_grid)
@@ -120,7 +123,7 @@ func _add_new_tile() -> bool:
 		return false
 
 	match game_mode:
-		MODE.STANDARD:
+		"STANDARD":
 			var coords = empties.pick_random()
 			var scene = preload("res://tile.tscn") as PackedScene
 			tile_grid[coords[0]][coords[1]] = scene.instantiate()
@@ -131,7 +134,7 @@ func _add_new_tile() -> bool:
 			if randf_range(0,1) < 0.1:
 				tile_grid[coords[0]][coords[1]]._set_log_val(2)
 			return true
-		MODE.NO4:
+		"NO4":
 			var coords = empties.pick_random()
 			var scene = preload("res://tile.tscn") as PackedScene
 			tile_grid[coords[0]][coords[1]] = scene.instantiate()
@@ -151,6 +154,8 @@ func _get_empties() -> Array:
 	return empties
 
 func _input(event: InputEvent) -> void:
+	if disabled:
+		return
 	if event is InputEventScreenTouch:
 		if event.pressed and not swiping:
 			swipe_start = event.position
